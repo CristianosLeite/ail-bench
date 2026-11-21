@@ -1,0 +1,9 @@
+fn fact n
+if n<2
+ret 1
+end
+call fact n-1 as m
+ret n*m
+end
+x=a+b*c  # a comment
+store p+8 n/10

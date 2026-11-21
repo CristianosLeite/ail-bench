@@ -1,0 +1,8 @@
+build/
+.venv/
+tools/pins/*
+!tools/pins/MANIFEST
+# links into the main repository, made by make
+/ail
+/lib
+/tools/lib/rng.aw
