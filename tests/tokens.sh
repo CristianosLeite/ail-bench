@@ -1,6 +1,6 @@
 #!/bin/sh
-# Check tools/tokens.aw, built as build/tools/tokens, and the tokenizer
-# tools/lib/o200k.aw behind it.
+# Check tools/tokens.aiw, built as build/tools/tokens, and the tokenizer
+# tools/lib/o200k.aiw behind it.
 # - tests/tokens/<name>.txt are texts at the edges of the rules (words
 #   and contractions, numbers, white space, punctuation, letters and marks
 #   of many scripts, long runs), and <name>.ids are the numbers of their
@@ -39,14 +39,14 @@ done
 
 # the code of a file: 9 lines of tests/tokens/code.txt, of which one has
 # a comment, are the same tokens with the comment and blank lines gone
-printf '\n# a comment alone\nx=a+b*c\n   \nstore p+8 n/10   # the rest\n' > "$tmp/with.aw"
-printf 'x=a+b*c\nstore p+8 n/10\n' > "$tmp/without.aw"
+printf '\n# a comment alone\nx=a+b*c\n   \nstore p+8 n/10   # the rest\n' > "$tmp/with.aiw"
+printf 'x=a+b*c\nstore p+8 n/10\n' > "$tmp/without.aiw"
 r=0
-a=$(build/tools/tokens -c '#' "$tmp/with.aw" 2> /dev/null) || r=1
-b=$(build/tools/tokens --ids "$tmp/without.aw" 2> /dev/null | wc -l) || r=1
-[ "$a" = "$b $tmp/with.aw" ] || r=1
-build/tools/tokens --code '#' "$tmp/with.aw" > "$tmp/code.aw" 2> /dev/null &&
-    cmp -s "$tmp/code.aw" "$tmp/without.aw" || r=1
+a=$(build/tools/tokens -c '#' "$tmp/with.aiw" 2> /dev/null) || r=1
+b=$(build/tools/tokens --ids "$tmp/without.aiw" 2> /dev/null | wc -l) || r=1
+[ "$a" = "$b $tmp/with.aiw" ] || r=1
+build/tools/tokens --code '#' "$tmp/with.aiw" > "$tmp/code.aiw" 2> /dev/null &&
+    cmp -s "$tmp/code.aiw" "$tmp/without.aiw" || r=1
 build/tools/tokens --code '#' > /dev/null 2> "$tmp/said"
 [ $? -eq 1 ] && [ "$(cat "$tmp/said")" = "tokens: usage: tokens --code <mark> file" ] || r=1
 say tokens_counts_code $r
@@ -59,5 +59,12 @@ build/tools/tokens --ids "$tmp/none" > /dev/null 2> "$tmp/said"
 build/tools/tokens -c > /dev/null 2> "$tmp/said"
 [ $? -eq 1 ] && [ "$(cat "$tmp/said")" = "tokens: usage: tokens -c <mark> file ..." ] || r=1
 say tokens_errors $r
+
+# the table: a program of bench/ and an example of the main repository
+# are found by their names, each with a count of its AIL source
+r=0
+build/tools/tokens bsearch hello > "$tmp/table" 2> /dev/null || r=1
+grep -q '^| bsearch | [0-9]' "$tmp/table" && grep -q '^| hello | [0-9]' "$tmp/table" || r=1
+say tokens_table $r
 
 exit $fail

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Check that every C, Rust and assembly program in bench/ behaves like
 # the AIL program it mirrors, an example of the main repository or
-# bench/<name>.aw:
+# bench/<name>.aiw:
 # same output and exit status for the same input: none, three bytes and
 # eight bytes, which is what the computing programs read. A program need
 # not have an assembly equivalent. Needs gcc and rustc
@@ -12,8 +12,8 @@ make -s all >/dev/null || exit 1
 t=$(mktemp -d build/bench.XXXXXX) || exit 1
 trap 'rm -rf "$t"' EXIT
 f=0
-for src in ail/examples/*.aw bench/*.aw; do
-    n=$(basename "$src" .aw)
+for src in ail/examples/*.aiw bench/*.aiw; do
+    n=$(basename "$src" .aiw)
     langs='c rs'
     gcc -O1 -w -o "$t/$n.c.bin" "bench/$n.c" &&
         rustc -O -o "$t/$n.rs.bin" "bench/$n.rs" 2>/dev/null ||

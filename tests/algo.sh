@@ -1,6 +1,6 @@
 #!/bin/sh
-# Check the algorithm programs, bench/<name>.aw, against references that share
-# nothing with them. A program reads five words (bench/algo/harness.aw):
+# Check the algorithm programs, bench/<name>.aiw, against references that share
+# nothing with them. A program reads five words (bench/algo/harness.aiw):
 # seed, count, shape, runs and mode, and writes its input in mode 1, its
 # result in mode 2 and a checksum of the result with its times in mode 0.
 # For the counts 0, 1, 2, 3 and 1000 in each of the four shapes:

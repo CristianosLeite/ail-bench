@@ -1,4 +1,4 @@
-// What the algorithm programs of bench/ share; bench/algo/harness.aw
+// What the algorithm programs of bench/ share; bench/algo/harness.aiw
 // says what it does, and this is the same statement for statement. The
 // clock is Instant::now, which calls the function of the vDSO that the
 // harness in AIL finds and calls itself.

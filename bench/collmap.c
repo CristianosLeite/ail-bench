@@ -1,6 +1,6 @@
 #include "algo/harness.h"
 
-/* a hash map with open addressing and linear probing, as lib/std/map.aw has
+/* a hash map with open addressing and linear probing, as lib/std/map.aiw has
    it: places of a state (0 free, 1 a key, 2 taken out), a key and a
    value, a power of two of them, moved to a new table when three
    quarters hold or held a key */

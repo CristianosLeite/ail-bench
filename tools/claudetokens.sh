@@ -75,11 +75,11 @@ a1=$1 b1=$2
 set -- $(ask "$dir/two")
 wa=$((a1 * 2 - $1)) wb=$((b1 * 2 - $2))
 
-names=${want:-$(ls ail/examples/*.aw bench/*.aw | sed 's|.*/||; s|\.aw$||')}
+names=${want:-$(ls ail/examples/*.aiw bench/*.aiw | sed 's|.*/||; s|\.aiw$||')}
 : > "$dir/rows"
 for n in $names; do
-    ail=bench/$n.aw
-    [ -f "$ail" ] || ail=ail/examples/$n.aw
+    ail=bench/$n.aiw
+    [ -f "$ail" ] || ail=ail/examples/$n.aiw
     for l in "AIL $ail #" "C bench/$n.c //" "Rust bench/$n.rs //" "asm bench/$n.s #"; do
         set -- $l
         [ -f "$2" ] || continue

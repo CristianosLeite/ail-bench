@@ -1,4 +1,4 @@
-/* bench/async/echod.c -- what bench/async/echod.aw is measured against:
+/* bench/async/echod.c -- what bench/async/echod.aiw is measured against:
    the same server written on epoll by hand, one thread, level-triggered,
    a read and a write for each event.  echod [port]; prints the port. */
 #define _GNU_SOURCE

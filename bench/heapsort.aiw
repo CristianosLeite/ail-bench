@@ -1,0 +1,6 @@
+# heapsort: sort words in place with sortheap of lib/algo/sort.aiw, which
+# takes the array and the count and leaves the work array alone.
+use "bench/algo/harness.aiw"
+use "lib/algo/sort.aiw"
+ref sortheap as k
+call algosort k

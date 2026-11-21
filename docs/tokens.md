@@ -1,8 +1,10 @@
 # Token cost
 
-> These measurements were made while the programs were part of the [main repository](https://github.com/CristianosLeite/ail), until 2026-11-21. In the sections written before that day `examples/` is `examples/` of the main repository for the ten small programs and `bench/<name>.aw` here for the algorithm, array and collection programs, `docs/language.md` and `docs/compiler.md` are documents there, and the tests named `lib_*` and `tests/nd/gen.py` are there too.
+> These measurements were made while the programs were part of the [main repository](https://github.com/CristianosLeite/ail), until 2026-11-21. In the sections written before that day `examples/` is `examples/` of the main repository for the ten small programs and `bench/<name>.aiw` here for the algorithm, array and collection programs, `docs/language.md` and `docs/compiler.md` are documents there, and the tests named `lib_*` and `tests/nd/gen.py` are there too.
 
-AIL exists to be cheap in tokens, so syntax choices are decided by measurement. `tools/tokens.sh` counts the tokens of each example in `examples/` and of the equivalent C, Rust and assembly programs in `bench/`, with comments and blank lines removed: the ten programs of the corpus and, [apart from it](#result), six algorithm programs. It counts with `build/tools/tokens`, a tokenizer of the `o200k_base` encoding written in AIL (`tools/tokens.aw`, `tools/lib/o200k.aw`), which gives the token numbers that `tiktoken` gives: it was compared with it on every character of Unicode in ten forms, on the text files of the repository and on random texts, and `tests/tokens.sh` keeps ten texts with the numbers `tiktoken` gave. It reads the tokens of the encoding and the character categories of Unicode 16.0.0 from two files that `tools/pins/MANIFEST` pins by checksum; `tools/tokens.sh` fetches them on first use (that step needs network access). `build/tools/tokens -c '#' file ...` counts single files without their comments, and `--ids file` prints the token numbers of a file. Until 2026-11-20 the count was `tiktoken` itself in a Python environment; the tables below are the same with either. The counts are those of one tokenizer; another model's tokenizer gives other numbers, but the comparison between languages is what matters here.
+> The sources are `.aiw` since 2026-11-21, where they were `.aw`, and a `use` line costs one token of `o200k_base` more with that name. The table of the ten under [Result](#result) and the line of `o200k_base` in the comparison with Claude's tokenizers are counted again: `isort`, the one of the ten with a `use` line, is 171 where it was 170, the corpus 942 where it was 941, and Rust 1.26 times AIL where it was 1.27. Every other figure of this document is of the sources as `.aw`: the callers of `lib/algo/` and the collection and array programs are 2 to 4 tokens more now, one for each of their `use` lines (`bsearch` 81, `graph` and `hashtab` 39, `heapsort` and `mergesort` 32, `quicksort` 49, `collseq` 388, `collmap` 227, `ndelem` 218, `ndreduce` 256, `ndmatmul` 145), and the counts of Claude's tokenizers were not asked for again.
+
+AIL exists to be cheap in tokens, so syntax choices are decided by measurement. `tools/tokens.sh` counts the tokens of each example in `examples/` and of the equivalent C, Rust and assembly programs in `bench/`, with comments and blank lines removed: the ten programs of the corpus and, [apart from it](#result), six algorithm programs. It counts with `build/tools/tokens`, a tokenizer of the `o200k_base` encoding written in AIL (`tools/tokens.aiw`, `tools/lib/o200k.aiw`), which gives the token numbers that `tiktoken` gives: it was compared with it on every character of Unicode in ten forms, on the text files of the repository and on random texts, and `tests/tokens.sh` keeps ten texts with the numbers `tiktoken` gave. It reads the tokens of the encoding and the character categories of Unicode 16.0.0 from two files that `tools/pins/MANIFEST` pins by checksum; `tools/tokens.sh` fetches them on first use (that step needs network access). `build/tools/tokens -c '#' file ...` counts single files without their comments, and `--ids file` prints the token numbers of a file. Until 2026-11-20 the count was `tiktoken` itself in a Python environment; the tables below are the same with either. The counts are those of one tokenizer; another model's tokenizer gives other numbers, but the comparison between languages is what matters here.
 
 ```
 tools/tokens.sh             # the table below
@@ -22,11 +24,11 @@ build/tools/perf               # time the same programs, see performance.md
 | fact | 41 | 44 | 55 | 101 |
 | fnv | 144 | 167 | 126 |  |
 | hello | 18 | 29 | 45 | 78 |
-| isort | 170 | 239 | 250 |  |
+| isort | 171 | 239 | 250 |  |
 | loop | 44 | 70 | 56 | 135 |
 | sieve | 138 | 145 | 186 |  |
-| total | 941 | 1118 | 1191 | 925 |
-| relative to AIL | 1.00 | 1.19 | 1.27 | 2.51 |
+| total | 942 | 1118 | 1191 | 925 |
+| relative to AIL | 1.00 | 1.19 | 1.26 | 2.51 |
 
 This is the fixed corpus that a change of syntax is judged on: five short programs that are mostly system calls, and five that compute (`compute`, `sieve`, `collatz`, `fnv` and `isort`, described in [performance.md](performance.md)). The last four have no assembly equivalent; a language is compared with the AIL total of the programs it has, so the assembly figure is over six programs. Since 2026-11-21 `isort` calls `sortins` of [`lib/algo/`](https://github.com/CristianosLeite/ail/blob/main/docs/language.md#the-algo-library), 110 tokens there, where it had the loop in the program: it was 219 tokens and the total 990 (C 1.13, Rust 1.20), which are the figures the measurements below name. The C and Rust programs keep their loop, so that row now compares a caller with a kernel; the other nine are as they were.
 
@@ -63,7 +65,7 @@ Since 2026-11-21 the kernels of the six, and the loop of `isort`, are in [`lib/a
 
 - **A caller is 30 to 47 tokens** where the harness can call the library function as it is or through an adapter of one line, a sixth of the C program; `bsearch` keeps its loop over the keys and is half of it.
 - **The library costs more than the kernel did**, 1793 tokens against about 1300 for the same statements in the programs: every variable has the prefix of its file, and `sortp` is two tokens where `p` is one. That is the price of names that cannot meet a `var` of the program, paid once by who writes the library and not by who calls it.
-- **`isort`**, one of the ten of the fixed corpus, went from 219 to 170 tokens by calling `sortins` (110 in the library); the corpus is 941 tokens with it where it was 990, as [the table of the ten](#result) now has it. Its loop was the only kernel among the ten, so the other nine are as they were, and a change of syntax is still judged on the ten.
+- **`isort`**, one of the ten of the fixed corpus, went from 219 to 170 tokens by calling `sortins` (110 in the library); the corpus was 941 tokens with it where it was 990, and is 942 in [the table of the ten](#result) since the sources are `.aiw`. Its loop was the only kernel among the ten, so the other nine are as they were, and a change of syntax is still judged on the ten.
 
 On the kernels in the programs, as the first table has them, AIL is 6% cheaper than C and 15% cheaper than Rust on the six, less than on the ten: these are loops over arrays, where C writes `a[i]` and `*k++ = *j++` and AIL a `load` and a `store` on lines of their own. It is dearer than C in `mergesort` and `graph`, the two with the most such lines. With all sixteen the totals are 2506, 2731 and 2974.
 
@@ -93,7 +95,7 @@ The ten programs of the corpus:
 
 | relative to AIL | C | Rust | asm |
 |---|---:|---:|---:|
-| `o200k_base` | 1.19 | 1.27 | 2.51 |
+| `o200k_base` | 1.19 | 1.26 | 2.51 |
 | Claude Sonnet 4.6 | 1.28 | 1.37 | 2.62 |
 | Claude Fable 5 | 1.27 | 1.43 | 2.70 |
 
@@ -107,7 +109,7 @@ What this does not say: the rules [above](#what-this-decides), fewer lines befor
 
 ## Where the tokens go
 
-Measured on the first `compiler/ailc.aw` without comments: 6181 tokens in 1107 lines, 5.6 a line.
+Measured on the first `compiler/ailc.aiw` without comments: 6181 tokens in 1107 lines, 5.6 a line.
 
 - **The line end is a token**, and so is every statement that an expression language would nest: 1096 of the 6181 tokens are line ends. One operation per line is the main cost against C.
 - **`as` is a token** on 422 lines. It is the price of naming every intermediate result.
@@ -124,18 +126,18 @@ Measured on the first `compiler/ailc.aw` without comments: 6181 tokens in 1107 l
 
 Run the script again after a change of syntax and update the table when an example changes.
 
-`tools/infix.aw` (`build/tools/infix in.aw out.aw`) rewrites a source written with statements: each statement that computes as an assignment, a label loop with its test at the top as `while`, and a variable that is assigned on one line and read once on the next, and not again, folded into that line, repeatedly. A `var` is never folded, wherever it is declared: the tool reads the files the source names with `use`, and files named after `out.aw` for a source that another file includes. On the ten examples as they were written with statements it gives 1031 tokens from 1313; written by hand they are 970 (990 since they are indented), the difference being lines that the tool keeps for their comments and loops it does not restructure. It was checked by rewriting the 310 runnable test programs it changes: each behaves as before. On `compiler/ailc.aw` it gave 20172 tokens from 25635, 21% fewer.
+`tools/infix.aiw` (`build/tools/infix in.aiw out.aiw`) rewrites a source written with statements: each statement that computes as an assignment, a label loop with its test at the top as `while`, and a variable that is assigned on one line and read once on the next, and not again, folded into that line, repeatedly. A `var` is never folded, wherever it is declared: the tool reads the files the source names with `use`, and files named after `out.aiw` for a source that another file includes. On the ten examples as they were written with statements it gives 1031 tokens from 1313; written by hand they are 970 (990 since they are indented), the difference being lines that the tool keeps for their comments and loops it does not restructure. It was checked by rewriting the 310 runnable test programs it changes: each behaves as before. On `compiler/ailc.aiw` it gave 20172 tokens from 25635, 21% fewer.
 
 ## Control flow, measured on 2026-11-20
 
-Before choosing new forms of control flow, the cost of the existing ones was counted in `compiler/ailc.aw` and the examples together: 13447 tokens in 2443 lines.
+Before choosing new forms of control flow, the cost of the existing ones was counted in `compiler/ailc.aiw` and the examples together: 13447 tokens in 2443 lines.
 
 - Jumps, labels and comparisons were 3894 tokens, 29% of all.
 - 160 comparisons were followed by a `jz` or `jnz` on their result. One statement for the pair saves 857 tokens: 6.4% of all, 22% of the control flow.
 - 152 of the 242 labels were the target of a single forward conditional jump, the shape of an `if`. A block that needs no label name saves 602 tokens: 4.5% of all, 15% of the control flow.
 - 31 labels were the target of a single backward jump, the shape of a loop. A loop statement would save little, since a loop still needs its test and often a second exit.
 
-So the compare-and-jump statements and the `if` blocks were added, and no loop statement then. `while` came with expressions (below): on programs that compute, a loop with its test in one line is worth more than it was in the compiler source, where most loops have a second exit. After rewriting stage1 with `tools/fuse.py` (now `tools/fuse.aw`), `compiler/ailc.aw` went from 13483 to 12305 tokens.
+So the compare-and-jump statements and the `if` blocks were added, and no loop statement then. `while` came with expressions (below): on programs that compute, a loop with its test in one line is worth more than it was in the compiler source, where most loops have a second exit. After rewriting stage1 with `tools/fuse.py` (now `tools/fuse.aiw`), `compiler/ailc.aiw` went from 13483 to 12305 tokens.
 
 ## Expressions, measured on 2026-11-20
 
@@ -214,7 +216,7 @@ That decided the [source style](https://github.com/CristianosLeite/ail/blob/main
 | `join h as x` | 5 |
 | the same with library functions only: `ref steps as p`, `call spawn p lo hi 0 0 0 as h`, `call join h as x` | 25 |
 
-A task that is spawned and joined is 12 tokens in two lines, against 25 in three if `spawn` were only a function, which would also need every unused value written, since a call is checked against the parameters. A program pays 6 more once, for `use "lib/std/task.aw"`. What makes a program with tasks longer is not the forms but the cutting of the work: in the three programs of `bench/par/` the loop that cuts a range into pieces, keeps the handles and adds up the results is 90 of the 107 to 115 tokens added, counted before the programs were indented ([performance](performance.md#tasks) has their times). A helper that does it for any function would need a function as a value of `spawn`, which the statement does not take; that is left until more programs show the same loop.
+A task that is spawned and joined is 12 tokens in two lines, against 25 in three if `spawn` were only a function, which would also need every unused value written, since a call is checked against the parameters. A program pays 6 more once, for `use "lib/std/task.aiw"`. What makes a program with tasks longer is not the forms but the cutting of the work: in the three programs of `bench/par/` the loop that cuts a range into pieces, keeps the handles and adds up the results is 90 of the 107 to 115 tokens added, counted before the programs were indented ([performance](performance.md#tasks) has their times). A helper that does it for any function would need a function as a value of `spawn`, which the statement does not take; that is left until more programs show the same loop.
 
 ## Async, measured on 2026-11-20
 
@@ -252,7 +254,7 @@ With the statements in the compiler, the programs of `bench/async/` as they are 
 | program | AIL | C |
 |---|---:|---:|
 | `timer`: two tasks that print at their own pace | 82 | |
-| `echod`: a TCP echo server, a task a connection (`echo.aw` and `echod.aw`) | 259 | 503 |
+| `echod`: a TCP echo server, a task a connection (`echo.aiw` and `echod.aiw`) | 259 | 503 |
 | `ping`: load for it, with the time of every round trip and its distribution | 648 | |
 
 The server in C (`echod.c`) is written on `epoll` by hand, as the AIL one would be without the library: it keeps no state for a connection and retries a write that finds the socket full in a loop, which the tasks do properly, by waiting. Of the 259 tokens, 133 are the two functions that serve (119 before they were indented), 48 the six `use` lines and 78 the reading of the port and the start. An AI that writes the server writes a loop around `await asyncread` and `await asyncwriteall`; what it does not write is the state of each connection and the table of who waits for what.
