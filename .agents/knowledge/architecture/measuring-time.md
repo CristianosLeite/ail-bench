@@ -10,7 +10,7 @@ status: current
 `ld`, requires every executable to give the expected output, then times child processes with
 the monotonic clock, bound to one CPU, each round running every language once in an order
 shuffled from a fixed seed. A figure is a median with its quartiles. `docs/performance.md` has
-the method in full and every result.
+the method in full and the current result of every measurement.
 
 ## What makes a figure wrong
 - **The place of a loop in the file.** A short loop moved by a few bytes changed its time by
@@ -35,7 +35,13 @@ the method in full and every result.
 
 ## How to apply
 - Report the command, the day and the revision of the main repository with a figure.
-- A new section in `docs/performance.md` for a new measurement; earlier sections are a
-  record and are not rewritten.
+- `docs/performance.md` has the current figures only (the user's decision of 2026-11-21, when
+  every measurement was run again and the sections that recorded the steps of the compiler
+  were dropped; they are in the history of the file up to `cb14f3b`). A measurement that is
+  run again replaces its section; a new one gets a section. The async figures and the
+  processor time and system calls of the echo servers are run by hand, with the commands of
+  that section, `/proc/<pid>/stat` and `strace -c`.
+- The main repository links to sections of that file by anchor; the anchors of the dropped
+  sections no longer exist.
 - The compiler decisions that came out of these figures:
   [generated code after the algorithm measurements](https://github.com/CristianosLeite/ail/blob/main/.agents/knowledge/architecture/generated-code-follow-up.md).
