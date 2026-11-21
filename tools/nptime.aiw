@@ -1,0 +1,328 @@
+# tools/nptime.aiw -- time NumPy on the kernels of the array programs, for
+# docs/performance.md.
+#
+#   build/tools/nptime [--cpu N]
+#
+# The same operations on arrays of the same sizes as the rows of
+# tools/perf.aiw for ndelem, ndreduce and ndmatmul, each into a result
+# that is there before the clock starts, where NumPy allows one. The
+# numbers are not those of the harness: only the time is compared, the
+# results are compared by the tests lib_nd_ref_* of the main repository.
+#
+# NumPy is called by Python, so each row is a program for python3 that
+# this tool writes to build/nptime/row.py: the arrays, then 17 rounds of
+# the runs perf makes in one process, each round timed by Python's clock
+# and printed in nanoseconds. The tool starts it bound to one CPU (2, or
+# the one named), reads the 17 times, leaves out the first 2 and prints
+# the median of the 15 others in milliseconds. One thread, so that the
+# product of matrices is not spread over the cores by the BLAS.
+#
+# Run from the top of the repository. Needs python3 with numpy; no part
+# of make test. Status 0, or 1 with a line "nptime: ..." on stderr.
+use "lib/std/io.aiw"
+use "lib/std/bytes.aiw"
+use "lib/std/file.aiw"
+use "lib/std/proc.aiw"
+use "tools/lib/fmt.aiw"
+
+const rounds 17
+const skipped 2
+
+# what every program starts with
+data head "import os\n"
+data "for v in ('OMP','OPENBLAS','MKL'):\n"
+data " os.environ[v+'_NUM_THREADS']='1'\n"
+data "import time\n"
+data "import numpy as np\n"
+data "g=np.random.default_rng(7)\n" 0
+
+# the arrays of each kind of row, for a count or a side n: two vectors,
+# two squares with a vector for a result, two squares with a square
+data setup0 "a=g.uniform(-512,512,n)\n"
+data "b=g.uniform(-512,512,n)\n"
+data "r=np.empty(n)\n"
+data "k=b[0]\n" 0
+data setup1 "a=g.uniform(-512,512,(n,n))\n"
+data "b=g.uniform(-512,512,(n,n))\n"
+data "r=np.empty(n)\n"
+data "x=a.reshape(n*n)\n"
+data "y=b.reshape(n*n)\n" 0
+data setup2 "a=g.uniform(-512,512,(n,n))\n"
+data "b=g.uniform(-512,512,(n,n))\n"
+data "r=np.empty((n,n))\n" 0
+
+# the rows: the kernel, the count or side, the runs, the kind of arrays
+# and the statement that is timed, each with a NUL byte after it
+const nrows 14
+data rows "ndelem add" 0 "1000" 0 "20000" 0 "0" 0 "np.add(a,b,out=r)" 0
+data "ndelem mul" 0 "1000" 0 "20000" 0 "0" 0 "np.multiply(a,b,out=r)" 0
+data "ndelem scale" 0 "1000" 0 "20000" 0 "0" 0 "np.multiply(a,k,out=r)" 0
+data "ndelem add" 0 "1000000" 0 "20" 0 "0" 0 "np.add(a,b,out=r)" 0
+data "ndelem mul" 0 "1000000" 0 "20" 0 "0" 0 "np.multiply(a,b,out=r)" 0
+data "ndelem scale" 0 "1000000" 0 "20" 0 "0" 0 "np.multiply(a,k,out=r)" 0
+data "ndreduce sum" 0 "100" 0 "1000" 0 "1" 0 "a.sum()" 0
+data "ndreduce cols" 0 "100" 0 "1000" 0 "1" 0 "a.sum(axis=0,out=r)" 0
+data "ndreduce dot" 0 "100" 0 "1000" 0 "1" 0 "x@y" 0
+data "ndreduce sum" 0 "1000" 0 "20" 0 "1" 0 "a.sum()" 0
+data "ndreduce cols" 0 "1000" 0 "20" 0 "1" 0 "a.sum(axis=0,out=r)" 0
+data "ndreduce dot" 0 "1000" 0 "20" 0 "1" 0 "x@y" 0
+data "ndmatmul" 0 "100" 0 "20" 0 "2" 0 "np.matmul(a,b,out=r)" 0
+data "ndmatmul" 0 "1000" 0 "1" 0 "2" 0 "np.matmul(a,b,out=r)" 0
+
+data cmdpy "python3" 0
+data rowpy "build/nptime/row.py" 0
+data showv "import numpy\n"
+data "print('NumPy',numpy.__version__)\n" 0
+
+# the program of a row, what it printed, a line for stdout
+buf py 24
+buf got 24
+buf ob 24
+# the arguments of the child, and the times of the rounds
+buf av 24
+buf samp 136
+
+fn fail m mn
+	call eprint "nptime: "
+	call eprint m mn
+	call eprint "\n"
+	sys exit_group 1
+end
+
+fn must r
+	ifz r
+		call fail "out of memory"
+	end
+end
+
+fn add b p n
+	call byadd b p n as r
+	call must r
+end
+
+# add the text at p, which ends with a NUL byte
+fn adds b p
+	call strlen p as n
+	call add b p n
+end
+
+# the text behind the one at p
+fn after p
+	call strlen p as n
+	ret p+n+1
+end
+
+fn say
+	load ob as p
+	load ob+8 as n
+	call print p n
+	call bycut ob 0
+end
+
+# the n bytes at p as a number and 1, or 0 and 0
+fn num p n
+	ifz n
+		ret 0 0
+	end
+	v=0
+	while n
+		loadb p as c
+		if c-48>=10
+			ret 0 0
+		end
+		v=v*10+c-48
+		p+=1
+		n-=1
+	end
+	ret v 1
+end
+
+fn same p n q m
+	if n!=m
+		ret 0
+	end
+	while n
+		loadb p as c
+		loadb q as d
+		if c!=d
+			ret 0
+		end
+		p+=1
+		q+=1
+		n-=1
+	end
+	ret 1
+end
+
+# write the program in py to its file and run it with the output o, or
+# -1 for that of this process: its status
+fn python o
+	load py as p
+	load py+8 as n
+	call filewrite "build/nptime/row.py" p n as r
+	ifslt r 0
+		call fail "cannot write build/nptime/row.py"
+	end
+	store av cmdpy
+	store av+8 rowpy
+	store av+16 0
+	call procstart av -1 o -1 as pid
+	ifslt pid 0
+		call fail "cannot start a process"
+	end
+	call procwait pid 0 as st
+	ret st
+end
+
+# the times that the program printed, one a line, into samp: their number
+fn times
+	call bycut got 0
+	call fileread "build/nptime/out" got as r
+	ifslt r 0
+		call fail "cannot read build/nptime/out"
+	end
+	load got as p
+	load got+8 as n
+	k=0
+	v=0
+	while n
+		loadb p as c
+		if c==10
+			if k<rounds
+				store samp+k*8 v
+			end
+			k+=1
+			v=0
+		else
+			if c-48>=10
+				ret 0
+			end
+			v=v*10+c-48
+		end
+		p+=1
+		n-=1
+	end
+	ret k
+end
+
+# the median of the times from the index a up to b, which it sorts
+fn median a b
+	i=a+1
+	while i<b
+		load samp+i*8 as v
+		j=i
+		while j>a
+			load samp+j*8-8 as w
+			jle w v put
+			store samp+j*8 w
+			j-=1
+		end
+		label put
+		store samp+j*8 v
+		i+=1
+	end
+	load samp+(a+(b-a)/2)*8 as v
+	ret v
+end
+
+# time the row whose five texts start at p and print its line: the text
+# behind them
+fn row p
+	call after p as pn
+	call after pn as pr
+	call after pr as pk
+	call after pk as ps
+	call bycut py 0
+	call adds py head
+	call add py "n="
+	call adds py pn
+	call add py "\n"
+	loadb pk as k
+	if k==48
+		call adds py setup0
+	end
+	if k==49
+		call adds py setup1
+	end
+	if k==50
+		call adds py setup2
+	end
+	call add py "for _ in range("
+	call byaddn py rounds as r
+	call must r
+	call add py "):\n t=time.perf_counter_ns()\n for _ in range("
+	call adds py pr
+	call add py "):\n  "
+	call adds py ps
+	call add py "\n print(time.perf_counter_ns()-t)\n"
+	call fileopen "build/nptime/out" 0x241 420 as o
+	ifslt o 0
+		call fail "cannot use build/nptime"
+	end
+	call python o as st
+	sys close o
+	if st
+		call fail "python3 failed on a row"
+	end
+	call times as k
+	if k!=rounds
+		call fail "a row did not print its times"
+	end
+	call median skipped rounds as t
+	itof t as t
+	itof 1000000 as d
+	fdiv t d as t
+	call adds ob p
+	call add ob ", "
+	call adds ob pn
+	call add ob " x "
+	call adds ob pr
+	call add ob ": "
+	call fmtfix ob t 2 as r
+	call must r
+	call add ob "\n"
+	call say
+	call after ps as p
+	ret p
+end
+
+fn main
+	call argc as n
+	cpu=2
+	i=1
+	while i<n
+		call argv i as p m
+		i+=1
+		call same p m "--cpu" as r
+		ifz r
+			call fail "usage: nptime [--cpu N]"
+		end
+		call argv i as p m
+		i+=1
+		call num p m as cpu r
+		ifz r
+			call fail "usage: nptime [--cpu N]"
+		end
+	end
+	call filemkdir "build" 493
+	call filemkdir "build/nptime" 493
+	call procpin cpu as cpu
+	ifslt cpu 0
+		call fail "cannot bind the process to a CPU"
+	end
+	call bycut py 0
+	call adds py showv
+	call python -1 as st
+	if st
+		call fail "python3 with numpy is needed"
+	end
+	p=rows
+	i=0
+	while i<nrows
+		call row p as p
+		i+=1
+	end
+	ret 0
+end
+
+call main

@@ -1,7 +1,7 @@
 ---
 title: Token cost
 last-verified: 2026-11-21
-sources: [conversation 2026-11-21, tools/tokens.aw, tools/lib/o200k.aw, tools/pins/MANIFEST, tests/tokens.sh, tools/claudetokens.sh, docs/tokens.md]
+sources: [conversation 2026-11-21, tools/tokens.aiw, tools/lib/o200k.aiw, tools/pins/MANIFEST, tests/tokens.sh, tools/claudetokens.sh, docs/tokens.md]
 status: current
 ---
 # Token cost
@@ -13,7 +13,7 @@ the encoding `o200k_base` written in AIL that gives the numbers of `tiktoken`.
 
 ## Decisions
 - **The whole tokenizer is here**, with its pins, fixtures and test: nothing in the main
-  repository used `tools/lib/o200k.aw` once the tool had moved (2026-11-21).
+  repository used `tools/lib/o200k.aiw` once the tool had moved (2026-11-21).
 - **Two pinned files** (`o200k_base.tiktoken`, `UnicodeData.txt` of Unicode 16.0.0) in
   `tools/pins/`, by SHA-256 in the manifest, fetched once by `tools/pin.sh` and ignored by
   git. Without them `tests/tokens.sh` prints `skip`, so `make test` needs no network.

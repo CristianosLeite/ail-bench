@@ -1,0 +1,6 @@
+# mergesort: sort the n words at a with sortmerge of lib/algo/sort.aiw,
+# which works in the n words at t that the harness gives.
+use "bench/algo/harness.aiw"
+use "lib/algo/sort.aiw"
+ref sortmerge as k
+call algosort k

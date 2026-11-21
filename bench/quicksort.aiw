@@ -1,0 +1,9 @@
+# quicksort: sort words with sortquick of lib/algo/sort.aiw, which sorts
+# from an address up to another, in place.
+use "bench/algo/harness.aiw"
+use "lib/algo/sort.aiw"
+fn sort a n t
+	tail sortquick a a+n*8
+end
+ref sort as k
+call algosort k

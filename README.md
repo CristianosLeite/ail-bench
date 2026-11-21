@@ -20,17 +20,17 @@ make                    # clone the address in ail.pin at the revision pinned th
 make AIL=../ail         # use a checkout of your own instead: ail becomes a link to it, until you remove it
 ```
 
-`ail.pin` holds the address and the revision this repository was last checked against. A clone at another revision is moved to the pinned one by the next `make`; a link is left alone, so that a compiler being worked on can be measured. `lib` and `tools/lib/rng.aw` are links into `ail/` that `make` creates, so that a `use "lib/std/io.aw"` here names the same file as there.
+`ail.pin` holds the address and the revision this repository was last checked against. A clone at another revision is moved to the pinned one by the next `make`; a link is left alone, so that a compiler being worked on can be measured. `lib` and `tools/lib/rng.aiw` are links into `ail/` that `make` creates, so that a `use "lib/std/io.aiw"` here names the same file as there.
 
 ## Commands
 
 ```
 make                 # build build/<name> of every program and build/tools/<name> of every tool
 make test            # check the programs and the tools; measures nothing
-make test T=lib_fmt  # one test of tests/<name>.aw
+make test T=lib_fmt  # one test of tests/<name>.aiw
 tools/bench.sh       # every C, Rust and assembly program must behave like its AIL program (needs gcc, rustc)
 tools/tokens.sh      # the token table of docs/tokens.md (fetches the pinned files once)
-build/tools/tokens -c '#' file.aw    # the tokens of a file without its comments; --ids file prints their numbers
+build/tools/tokens -c '#' file.aiw    # the tokens of a file without its comments; --ids file prints their numbers
 build/tools/perf     # time every program against C (gcc -O3), Rust (rustc -O) and assembly
 build/tools/perf --quick quicksort   # one program, fewer rounds
 build/tools/perf --qsort quicksort   # the sorts also against qsort of the C library
@@ -47,13 +47,13 @@ Run everything from the top of the repository. Times are worth reading only on a
 
 ## Layout
 
-- `bench/<name>.c`, `.rs`, `.s`: the programs in C, Rust and assembly. Ten mirror `examples/<name>.aw` of the main repository (`hello`, `echo`, `count`, `loop`, `fact`, `compute`, `sieve`, `collatz`, `fnv`, `isort`)
-- `bench/<name>.aw`: the AIL programs that exist to be measured: the algorithms (`quicksort`, `mergesort`, `heapsort`, `bsearch`, `hashtab`, `graph`), arrays of doubles (`ndelem`, `ndreduce`, `ndmatmul`) and collections (`collseq`, `collmap`). Each is the call of a kernel of the library and of the harness
-- `bench/algo/`: the harness in the three languages (`harness.aw`, `harness.h`, `harness.rs`): the input from a seed, the clock around each kernel, the result
+- `bench/<name>.c`, `.rs`, `.s`: the programs in C, Rust and assembly. Ten mirror `examples/<name>.aiw` of the main repository (`hello`, `echo`, `count`, `loop`, `fact`, `compute`, `sieve`, `collatz`, `fnv`, `isort`)
+- `bench/<name>.aiw`: the AIL programs that exist to be measured: the algorithms (`quicksort`, `mergesort`, `heapsort`, `bsearch`, `hashtab`, `graph`), arrays of doubles (`ndelem`, `ndreduce`, `ndmatmul`) and collections (`collseq`, `collmap`). Each is the call of a kernel of the library and of the harness
+- `bench/algo/`: the harness in the three languages (`harness.aiw`, `harness.h`, `harness.rs`): the input from a seed, the clock around each kernel, the result
 - `bench/par/`: programs without and with tasks, timed by `par`
 - `bench/async/`: programs of async functions: a timer, a TCP echo server (`echod`, also in C) with its load (`ping`), and what a wait, a sleeping task and a hop to another thread cost
 - `bench/nd/`: the matrix product with tasks
-- `tools/`: `perf`, `par`, `tokens` and `nptime` in AIL, built as `build/tools/<name>`; `tools/lib/` has what they share (`fmt.aw`, `o200k.aw`, the tokenizer); `ail.sh` fetches the main repository, `pin.sh` the files of `tools/pins/MANIFEST`
+- `tools/`: `perf`, `par`, `tokens` and `nptime` in AIL, built as `build/tools/<name>`; `tools/lib/` has what they share (`fmt.aiw`, `o200k.aiw`, the tokenizer); `ail.sh` fetches the main repository, `pin.sh` the files of `tools/pins/MANIFEST`
 - `tests/`: the checks of `make test`
 - `docs/`: the results
 - `AGENTS.md`, `.agents/knowledge/`: guidance and notes for AI coding agents

@@ -3,7 +3,7 @@
 # The compiler is build/ailc, or the one named by the environment variable AILC.
 #
 # A test is a set of files named tests/<name>.*:
-#   .aw     the program (or .aw.sh, a script that prints the program)
+#   .aiw     the program (or .aiw.sh, a script that prints the program)
 #   .out    expected stdout of the compiled program
 #   .code   expected exit status of the compiled program (default 0)
 #   .err    expected compiler stderr; the compiler must then exit 1
@@ -21,15 +21,15 @@ mkdir -p build/tests
 out=$(mktemp -d build/tests/run.XXXXXX) || exit 1
 trap 'rm -rf "$out"' EXIT
 trap 'exit 1' HUP INT TERM
-[ $# -eq 0 ] && set -- $(ls tests | sed -n 's/\.aw\(\.sh\)\{0,1\}$//p' | sort -u)
+[ $# -eq 0 ] && set -- $(ls tests | sed -n 's/\.aiw\(\.sh\)\{0,1\}$//p' | sort -u)
 
 check() {
-    if [ -f tests/$1.aw.sh ]
-    then sh tests/$1.aw.sh > $out/$1.aw || return 1
-    else cp tests/$1.aw $out/$1.aw || return 1
+    if [ -f tests/$1.aiw.sh ]
+    then sh tests/$1.aiw.sh > $out/$1.aiw || return 1
+    else cp tests/$1.aiw $out/$1.aiw || return 1
     fi
     # the compiler has the same deadline; killed, its status is neither 0 nor 1
-    timeout --signal=KILL $limit $ailc < $out/$1.aw > $out/$1 2> $out/$1.err
+    timeout --signal=KILL $limit $ailc < $out/$1.aiw > $out/$1 2> $out/$1.err
     rc=$?
     if [ -f tests/$1.err ]; then
         [ $rc -eq 1 ] && cmp -s $out/$1.err tests/$1.err

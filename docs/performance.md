@@ -16,11 +16,11 @@ build/tools/perf --places     # each program compiled at eight places
 
 ## Method
 
-`tools/perf.aw`, built as `build/tools/perf`, times every program against the C, Rust and assembly program in `bench/` that does the same.
+`tools/perf.aiw`, built as `build/tools/perf`, times every program against the C, Rust and assembly program in `bench/` that does the same.
 
 - C is built with `gcc -O3`, Rust with `rustc -O`, assembly with `as` and `ld`; the AIL program is `build/<name>`, so run `make` first. A language without a source for a program is left out of its row.
 - Every executable must give the expected output and exit status for the input before anything is timed. Where the output is a computed value, all languages must give the same bytes as C.
-- A run is a child process of `lib/std/proc.aw` and the wait for it (`fork`, `dup2`, `execve`, `wait4`), timed with the monotonic clock, with stdin from a file and stdout to `/dev/null`, the tool pinned to one CPU (2, a performance core). Each round runs every language once, in an order shuffled from a fixed seed, so that drift of the machine falls on all of them alike.
+- A run is a child process of `lib/std/proc.aiw` and the wait for it (`fork`, `dup2`, `execve`, `wait4`), timed with the monotonic clock, with stdin from a file and stdout to `/dev/null`, the tool pinned to one CPU (2, a performance core). Each round runs every language once, in an order shuffled from a fixed seed, so that drift of the machine falls on all of them alike.
 - The figure is the median, followed by the first and third quartile, which show the variation from run to run.
 - The input is read at run time, so no compiler can compute the result while compiling.
 - A ratio of AIL to C above 1.10 is marked `slow`.
@@ -29,7 +29,7 @@ The programs are of three kinds:
 
 - **Startup**: `hello`, `echo`, `count`, `fact` and `loop` do almost nothing, so their time is the cost of starting a process. 25 warm-up rounds and 500 timed ones, in microseconds.
 - **CPU-bound**: five programs that read their input, compute and write a 64-bit result. 2 warm-up rounds and 15 timed ones, in milliseconds.
-- **Programs of the harness**: the six algorithm programs, the three array programs and the two collection programs are kernels and their call of `bench/algo/harness.aw`. They are run on several inputs, take the time of their kernels themselves and are reported in tables of their own, [as said below](#algorithms). The same rounds as the CPU-bound programs.
+- **Programs of the harness**: the six algorithm programs, the three array programs and the two collection programs are kernels and their call of `bench/algo/harness.aiw`. They are run on several inputs, take the time of their kernels themselves and are reported in tables of their own, [as said below](#algorithms). The same rounds as the CPU-bound programs.
 
 | program | what it does | what it exercises |
 |---|---|---|
@@ -75,11 +75,11 @@ Geometric mean of AIL / C over the five: 1.016. Four are level with C or ahead o
 
 `quicksort`, `mergesort`, `heapsort`, `bsearch`, `hashtab` and `graph` ask what the compiler makes of code that calls functions and walks arrays: three sorts, a binary search, a hash table and a graph traversal, each the same algorithm with the same arrays in AIL, C and Rust. In AIL the kernels are functions of `lib/algo/`.
 
-A program reads five words from stdin: a seed, a count, a shape, a number of runs and a mode (`bench/algo/harness.aw`, with `harness.h` and `harness.rs` for the other two languages). It makes its input from the seed with splitmix64, so the three languages work on the same words, and then runs its kernel that many times, each time on a fresh copy of the input. The copy, the making of the input, the clearing of a table and the checksum are outside the timed region: the monotonic clock is read just before and just after each call of the kernel, and the sum over the runs is written behind a checksum of the last result. `perf` sends that output to a file, reads it after every run, requires the checksum of C in it, and reports the time of the kernel apart from the elapsed time of the process, which also has the start of the process and the setup in it.
+A program reads five words from stdin: a seed, a count, a shape, a number of runs and a mode (`bench/algo/harness.aiw`, with `harness.h` and `harness.rs` for the other two languages). It makes its input from the seed with splitmix64, so the three languages work on the same words, and then runs its kernel that many times, each time on a fresh copy of the input. The copy, the making of the input, the clearing of a table and the checksum are outside the timed region: the monotonic clock is read just before and just after each call of the kernel, and the sum over the runs is written behind a checksum of the last result. `perf` sends that output to a file, reads it after every run, requires the checksum of C in it, and reports the time of the kernel apart from the elapsed time of the process, which also has the start of the process and the setup in it.
 
 The three languages read the clock the same way, through `__vdso_clock_gettime`, a function the kernel maps into every process that reads the clock without entering the kernel: `clock_gettime` of the C library and `Instant::now` of Rust call it, and the harness in AIL finds it in the file the kernel maps (`algoclk`) and calls it with `callp`. A system call for each reading would be charged to AIL alone, on every run of a kernel.
 
-The inputs are rows of a table in `tools/perf.aw`: a thousand elements with enough runs for some tens of milliseconds, and a million with one to four runs, in up to four shapes. `random` is words of 64 bits; `sorted` and `reversed` rise and fall by steps below 65536; `few` is values below 16 for a sort, steps below 2 for `bsearch`, 128 distinct keys for `hashtab` and at most one neighbour a vertex for `graph`, where `random` is up to 15. A small array lies in the first cache and shows the instructions; a large one shows the memory as well.
+The inputs are rows of a table in `tools/perf.aiw`: a thousand elements with enough runs for some tens of milliseconds, and a million with one to four runs, in up to four shapes. `random` is words of 64 bits; `sorted` and `reversed` rise and fall by steps below 65536; `few` is values below 16 for a sort, steps below 2 for `bsearch`, 128 distinct keys for `hashtab` and at most one neighbour a vertex for `graph`, where `random` is up to 15. A small array lies in the first cache and shows the instructions; a large one shows the memory as well.
 
 Before anything is timed the whole result, not its checksum, must be the same bytes as that of C at the counts 0, 1 and 1000 in the shape of the row. That the results are right, and not only alike, is checked by `tests/algo.sh` in `make test`: the sorts against `sort(1)`, the others against awk programs, in the three languages.
 
@@ -253,7 +253,7 @@ What the figures say:
 
 ### Tasks in the product
 
-`ndmatmulp` of `lib/nd/par.aw` cuts the rows of the result into runs and makes a task of each ([tasks](https://github.com/CristianosLeite/ail/blob/main/docs/language.md#tasks)); no two write the same element, and the result is the same bits as that of `ndmatmul`. `bench/nd/mmtasks.aw` times both in one process for a shape, a number of threads and a number of tasks, each result compared with that of `ndmatmul` outside the clocks; `bench/nd/mmtasks.sh` runs it for the table. A cell is the first call of `ndmatmulp`, which also starts the threads of the pool, and then the fastest of the later calls, which find them there, in microseconds, the median of five processes. The row `ndmatmul` is the fastest call on one thread: the least and the most of the nine medians of the shape, one for each row below it. A shape is the rows and columns of the first matrix and the columns of the second, so the first number is the rows of the result, which are what the tasks share out:
+`ndmatmulp` of `lib/nd/par.aiw` cuts the rows of the result into runs and makes a task of each ([tasks](https://github.com/CristianosLeite/ail/blob/main/docs/language.md#tasks)); no two write the same element, and the result is the same bits as that of `ndmatmul`. `bench/nd/mmtasks.aiw` times both in one process for a shape, a number of threads and a number of tasks, each result compared with that of `ndmatmul` outside the clocks; `bench/nd/mmtasks.sh` runs it for the table. A cell is the first call of `ndmatmulp`, which also starts the threads of the pool, and then the fastest of the later calls, which find them there, in microseconds, the median of five processes. The row `ndmatmul` is the fastest call on one thread: the least and the most of the nine medians of the shape, one for each row below it. A shape is the rows and columns of the first matrix and the columns of the second, so the first number is the rows of the result, which are what the tasks share out:
 
 | threads, tasks | 30 x 30 x 30 | 100 x 100 x 100 | 300 x 300 x 300 | 1000 x 1000 x 1000 | 4000 x 16 x 16 | 16 x 250 x 250 | 250 x 250 x 16 |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -287,7 +287,7 @@ The number is the plan and no count of tasks that ran: with one block the caller
 
 ## Collections
 
-Two programs time `lib/std/vec.aw`, `queue.aw`, `heap.aw` and `map.aw` over the harness, with the same in C and in Rust: `collseq` pushes every key to a vector and pops them, sends them through a queue with room for 1024, and pushes them to a heap and takes them out in order; `collmap` puts every key into a map with its index, gets each, and deletes each, three kernels on one map. A kernel makes its collection and gives it back inside the clock. In C the collections are written by hand in the program, arrays from `malloc` and `realloc` and a table with the layout, the hash and the growth of `lib/std/map.aw`; in Rust they are `Vec`, `VecDeque`, `BinaryHeap` and `HashMap` of the standard library. `tests/algo.sh` requires of the three what awk and `sort(1)` make of the keys.
+Two programs time `lib/std/vec.aiw`, `queue.aiw`, `heap.aiw` and `map.aiw` over the harness, with the same in C and in Rust: `collseq` pushes every key to a vector and pops them, sends them through a queue with room for 1024, and pushes them to a heap and takes them out in order; `collmap` puts every key into a map with its index, gets each, and deletes each, three kernels on one map. A kernel makes its collection and gives it back inside the clock. In C the collections are written by hand in the program, arrays from `malloc` and `realloc` and a table with the layout, the hash and the growth of `lib/std/map.aiw`; in Rust they are `Vec`, `VecDeque`, `BinaryHeap` and `HashMap` of the standard library. `tests/algo.sh` requires of the three what awk and `sort(1)` make of the keys.
 
 The time of the kernels, median in milliseconds (first and third quartile):
 
@@ -362,7 +362,7 @@ The most is 0.2 to 4.3% above the least, so a figure of one build says something
 
 ## Tasks
 
-`tools/par.aw`, built as `build/tools/par`, times the programs of `bench/par/`, each written twice: `<name>_seq.aw` does the work in one call, `<name>_par.aw` cuts it into tasks with `spawn` and `join` (`lib/std/task.aw`). It says what the pool gains at 1, 2, 4, 8, 14 and 20 threads, and how small a task may be before its scheduling costs more than it saves.
+`tools/par.aiw`, built as `build/tools/par`, times the programs of `bench/par/`, each written twice: `<name>_seq.aiw` does the work in one call, `<name>_par.aiw` cuts it into tasks with `spawn` and `join` (`lib/std/task.aiw`). It says what the pool gains at 1, 2, 4, 8, 14 and 20 threads, and how small a task may be before its scheduling costs more than it saves.
 
 ```
 make
@@ -473,7 +473,7 @@ The programs of `bench/async/` measure the runtime of `lib/async/`, which polls 
 
 ```
 make
-for p in timer echod ping switch mem hop calc; do build/ailc < bench/async/$p.aw > build/$p && chmod +x build/$p; done
+for p in timer echod ping switch mem hop calc; do build/ailc < bench/async/$p.aiw > build/$p && chmod +x build/$p; done
 gcc -O2 -o build/echod_c bench/async/echod.c
 build/switch 1000 1000      # a million waits
 build/mem 100000            # bytes a sleeping task

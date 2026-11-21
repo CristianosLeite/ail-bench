@@ -1,6 +1,6 @@
 #!/bin/sh
 # bench/nd/mmtasks.sh -- the table of docs/performance.md on the number
-# of tasks of a matrix product: bench/nd/mmtasks.aw for several shapes,
+# of tasks of a matrix product: bench/nd/mmtasks.aiw for several shapes,
 # each with one thread and task and with more of both. Run it from the
 # top of the repository after make; it needs no other tool. A time is
 # the median of five processes, in microseconds; beside the tasks asked
@@ -11,7 +11,7 @@
 set -eu
 t=$(mktemp -d)
 trap 'rm -rf "$t"' EXIT
-build/ailc < bench/nd/mmtasks.aw > "$t/mm"
+build/ailc < bench/nd/mmtasks.aiw > "$t/mm"
 chmod +x "$t/mm"
 word() {
     for v; do

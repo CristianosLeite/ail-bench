@@ -1,0 +1,23 @@
+# bench/async/echod.aiw -- a TCP echo server on one thread, a task for
+# each connection:  echod [port]  (default 8080; with 0 the kernel
+# chooses the port). It prints the port it listens on and runs until it
+# is killed.
+use "lib/std/io.aiw"
+use "lib/async/task.aiw"
+use "lib/async/time.aiw"
+use "lib/async/io.aiw"
+use "bench/async/echo.aiw"
+use "bench/async/num.aiw"
+port=8080
+call argv 1 as p n
+if n
+	call decnum p n as port
+end
+call asynclisten 0 port as l
+if l>-4096
+	call die "echod: cannot listen\n"
+end
+call asyncport l as port
+call putn port
+call print "\n"
+await echoserve l

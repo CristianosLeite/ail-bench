@@ -1,19 +1,19 @@
 ---
 title: Harness and programs
 last-verified: 2026-11-21
-sources: [conversation 2026-11-21, bench/algo/harness.aw, tools/perf.aw, tests/algo.sh, docs/performance.md]
+sources: [conversation 2026-11-21, bench/algo/harness.aiw, tools/perf.aiw, tests/algo.sh, docs/performance.md]
 status: current
 ---
 # Harness and programs
 
 **Summary.** A program is measured in up to four languages. Its AIL source is
-`bench/<name>.aw` when it exists to be measured and `ail/examples/<name>.aw` when it is an
+`bench/<name>.aiw` when it exists to be measured and `ail/examples/<name>.aiw` when it is an
 example of the language; the tools look in that order. The algorithm, array and collection
 programs are a kernel of the library and a call of one harness that the three languages have
 alike, so what differs between the languages is the kernel.
 
 ## Decisions
-- **One harness, three sources** (`harness.aw`, `harness.h`, `harness.rs`): the input comes
+- **One harness, three sources** (`harness.aiw`, `harness.h`, `harness.rs`): the input comes
   from a seed by splitmix64, so every language has the same words, and a number for the array
   programs is the lowest 20 bits of a word, divided by 1024, less 512, so every language has
   the same doubles and, adding in the same order, the same bits of result. `perf` requires the
@@ -28,8 +28,8 @@ alike, so what differs between the languages is the kernel.
   whose totals stay comparable with earlier counts.
 
 ## How to apply
-- A new program: `bench/<name>.aw`, `.c`, `.rs`; a name in `ALGO` of the Makefile with its
-  `use` files; `progs`, `pkern`, `knames` and rows of `work` in `tools/perf.aw`; a reference
+- A new program: `bench/<name>.aiw`, `.c`, `.rs`; a name in `ALGO` of the Makefile with its
+  `use` files; `progs`, `pkern`, `knames` and rows of `work` in `tools/perf.aiw`; a reference
   in `tests/algo.sh` that shares nothing with the program (awk, `sort`).
 - After changing an AIL program, change its equivalents and run `tools/bench.sh`.
 - More on the reasons: [algorithms and collections](https://github.com/CristianosLeite/ail/blob/main/.agents/knowledge/architecture/algorithms-and-collections.md) and

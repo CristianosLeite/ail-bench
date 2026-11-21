@@ -1,7 +1,7 @@
 ---
 title: Measuring time
 last-verified: 2026-11-21
-sources: [conversation 2026-11-21, docs/performance.md, tools/perf.aw, tools/par.aw, tools/nptime.aw]
+sources: [conversation 2026-11-21, docs/performance.md, tools/perf.aiw, tools/par.aiw, tools/nptime.aiw]
 status: current
 ---
 # Measuring time

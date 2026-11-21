@@ -1,5 +1,5 @@
 #!/bin/sh
-# Check the tools of this repository, tools/<name>.aw, built as
+# Check the tools of this repository, tools/<name>.aiw, built as
 # build/tools/<name> by make tools.
 # - The prerequisites that the Makefile gives a tool must be its source and
 #   every file that source reaches with use, no more and no less: an edit
@@ -40,9 +40,9 @@ closure() {
 # the recipe of build/ailc names make by itself, so -n does not run the
 # make of the main repository, which would print its rules too
 make -pn tools 2> /dev/null > "$tmp/db"
-for src in tools/*.aw; do
+for src in tools/*.aiw; do
     [ -f "$src" ] || continue
-    name=$(basename "$src" .aw)
+    name=$(basename "$src" .aiw)
     closure "$src" > "$tmp/uses"
     sed -n "s|^build/tools/$name: ||p" "$tmp/db" | tr ' ' '\n' |
         grep -v -e '^build/ailc$' -e '^$' | sort > "$tmp/deps"

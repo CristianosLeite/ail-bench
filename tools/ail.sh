@@ -10,14 +10,14 @@
 #   it is not there, and moved to the revision if it is at another one,
 #   unless it has changes of its own, which is an error.
 # Then the links that git ignores are made: lib, so that a use line names
-# a library as it does in the main repository, and tools/lib/rng.aw, the
+# a library as it does in the main repository, and tools/lib/rng.aiw, the
 # one file of tools/lib there that a tool here needs.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 die() { echo "ail: $*" >&2; exit 1; }
 
 if [ $# -gt 0 ]; then
-    [ -f "$1/compiler/ailc.aw" ] || die "no AIL repository at $1"
+    [ -f "$1/compiler/ailc.aiw" ] || die "no AIL repository at $1"
     [ ! -e ail ] || [ -L ail ] || die "ail is a clone; remove it to use $1"
     ln -sfn "$(cd "$1" && pwd)" ail || exit 1
 elif [ ! -L ail ]; then
@@ -34,5 +34,5 @@ elif [ ! -L ail ]; then
         git -C ail checkout -q --detach "$rev" || die "$url has no revision $rev"
     fi
 fi
-[ -f ail/compiler/ailc.aw ] || die "ail is no AIL repository"
-ln -sfn ail/lib lib && ln -sfn ../../ail/tools/lib/rng.aw tools/lib/rng.aw
+[ -f ail/compiler/ailc.aiw ] || die "ail is no AIL repository"
+ln -sfn ail/lib lib && ln -sfn ../../ail/tools/lib/rng.aiw tools/lib/rng.aiw
