@@ -57,3 +57,7 @@ Run everything from the top of the repository. Times are worth reading only on a
 - `tests/`: the checks of `make test`
 - `docs/`: the results
 - `AGENTS.md`, `.agents/knowledge/`: guidance and notes for AI coding agents
+
+## License
+
+[MIT](LICENSE).
