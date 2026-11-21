@@ -5,7 +5,7 @@ The benchmarks of [AIL](https://github.com/CristianosLeite/ail), a programming l
 The results are in two documents:
 
 - [Token cost](docs/tokens.md): AIL against C, Rust and assembly with the tokenizer `o200k_base` and with Claude's, and the counts that decided the syntax
-- [Performance](docs/performance.md): the method, and every measurement since the first, with what each changed in the compiler or the libraries
+- [Performance](docs/performance.md): the method and the current figures of every measurement, each with the command that printed it
 
 ## Requirements
 
