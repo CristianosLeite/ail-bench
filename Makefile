@@ -18,10 +18,13 @@ endif
 SMALL := hello echo count loop fact compute sieve collatz fnv isort
 ALGO := quicksort mergesort heapsort bsearch hashtab graph ndelem ndreduce \
         ndmatmul collseq collmap
+# The programs that spend their time in the runtime of AIL: reading and
+# writing, and memory. bench/<name>.aiw and the C program beside it.
+RT := iocopy iosmall allocs
 
 TOOLS := $(patsubst tools/%.aiw,$(B)/tools/%,$(wildcard tools/*.aiw))
 
-all: $(patsubst %,$(B)/%,$(SMALL) $(ALGO)) $(TOOLS)
+all: $(patsubst %,$(B)/%,$(SMALL) $(ALGO) $(RT)) $(TOOLS)
 
 tools: $(TOOLS)
 

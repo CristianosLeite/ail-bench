@@ -29,6 +29,7 @@ The programs are of three kinds:
 
 - **Startup**: `hello`, `echo`, `count`, `fact` and `loop` do almost nothing, so their time is the cost of starting a process. 25 warm-up rounds and 500 timed ones, in microseconds.
 - **CPU-bound**: five programs that read their input, compute and write a 64-bit result. 2 warm-up rounds and 15 timed ones, in milliseconds.
+- **Runtime**: `iocopy`, `iosmall` and `allocs` read, write and allocate, so their time is that of the runtime of AIL against the C library. The same rounds as the CPU-bound programs, in a table of their own.
 - **Programs of the harness**: the six algorithm programs, the three array programs and the two collection programs are kernels and their call of `bench/algo/harness.aiw`. They are run on several inputs, take the time of their kernels themselves and are reported in tables of their own, [as said below](#algorithms). The same rounds as the CPU-bound programs.
 
 | program | what it does | what it exercises |
@@ -70,6 +71,42 @@ Median elapsed in milliseconds (first and third quartile):
 | isort | 49.62 (49.59, 49.67) | 49.95 (49.90, 50.00) | 70.24 (70.19, 70.39) |  | 0.993 |
 
 Geometric mean of AIL / C over the five: 1.016. Four are level with C or ahead of it. `collatz` is the one program behind, by 12.5%: C adds one to the count twice and halves at once after an odd step, since 3x+1 is even, which folds the two branches of the `if` into one round, and the AIL compiler writes the code of a line when it has read it, so it compiles the two branches as written. `isort` is three tenths faster than the Rust program, which checks its indexes.
+
+## Runtime
+
+Since 2026-11-26 an AIL program asks its platform for what it needs through a runtime (`docs/runtime.md` of the main repository): AIL source that the compiler compiles into every executable, in front of the program. Three programs spend their time there, each beside a C program that does the same with the C library: `iocopy` copies 16 MiB from its input to its output, 64 KiB a read; `iosmall` writes 16 bytes a million times; `allocs` takes and frees 200000 blocks of 16 to 1039 bytes of zeros, 64 of them alive at a time, writing each at both ends. The rounds are those of the CPU-bound programs.
+
+`build/tools/perf hello echo count fact loop compute sieve collatz fnv isort iocopy iosmall allocs` on 2026-11-26, against the branch `runtime` of the main repository at `31a5869`, median elapsed in milliseconds (first and third quartile):
+
+| program | AIL | C | AIL / C |
+|---|---:|---:|---:|
+| iocopy | 1.21 (1.20, 1.35) | 1.44 (1.40, 1.59) | 0.837 |
+| iosmall | 87.95 (87.40, 88.67) | 89.84 (89.65, 90.56) | 0.979 |
+| allocs | 4.62 (4.54, 4.68) | 4.65 (4.61, 4.75) | 0.993 |
+
+Geometric mean of AIL / C over the three: 0.934. A read or a write costs what it costs through the C library or less, a service of the runtime that is one system call being compiled in place of its call, and the copy is ahead by the time the C program takes longer to start. `allocs` took 496.77 ms (496.10, 498.08) against 6.31 for C, 79 times as long, while every block was a mapping of its own; the runtime has kept freed blocks by size since. Its sizes are a mask of the random number: with a remainder by 1008 the AIL program was 13% behind, the compiler dividing where C multiplies by a constant.
+
+The same run, for what the runtime costs the other programs. Startup, in microseconds:
+
+| program | AIL | C | Rust | asm |
+|---|---:|---:|---:|---:|
+| hello | 67.39 (60.32, 71.84) | 204.77 (198.54, 214.64) | 292.20 (286.07, 302.70) | 67.46 (58.52, 72.84) |
+| echo | 69.27 (61.59, 73.60) | 206.28 (198.90, 215.90) | 293.18 (286.90, 301.01) | 68.46 (60.91, 72.39) |
+| count | 70.48 (62.70, 74.77) | 207.68 (200.61, 218.38) | 294.48 (288.21, 304.63) | 69.03 (62.69, 73.77) |
+| fact | 68.11 (60.78, 71.76) | 203.15 (197.25, 212.47) | 292.06 (284.72, 302.39) | 66.59 (59.03, 71.15) |
+| loop | 70.17 (61.43, 74.43) | 204.06 (197.78, 212.93) | 290.65 (283.51, 299.19) | 69.05 (60.97, 73.68) |
+
+CPU-bound, in milliseconds:
+
+| program | AIL | C | Rust | asm | AIL / C |
+|---|---:|---:|---:|---:|---:|
+| compute | 131.55 (131.38, 131.84) | 131.72 (131.60, 131.90) | 131.84 (131.71, 132.10) | 131.63 (131.45, 131.90) | 0.999 |
+| sieve | 48.88 (48.71, 49.32) | 50.56 (50.10, 51.12) | 52.22 (51.57, 52.35) |  | 0.967 |
+| collatz | 87.66 (87.43, 88.09) | 78.05 (77.93, 78.26) | 57.55 (57.43, 57.67) |  | 1.123 slow |
+| fnv | 92.56 (92.35, 92.71) | 92.73 (92.58, 93.04) | 92.71 (92.61, 92.93) |  | 0.998 |
+| isort | 49.84 (49.72, 49.90) | 50.27 (50.10, 50.41) | 70.61 (70.47, 70.77) |  | 0.991 |
+
+Geometric mean of AIL / C over the five: 1.014, where the tables above, of the compiler before the runtime, have 1.016. An executable is 11.7 KiB longer than it was, every function of the runtime being in it, and a process touches one page of them. `hello` was also started in turn with the `hello` of the revision before the runtime, 3000 times each on one CPU: 48.2 microseconds in the median against 47.9, and 48.4 against 47.9 with the two the other way round. The runtime was written in C first, an image of 9 KiB in every executable with its state in a writable segment; that one cost two microseconds a start (49.8 against 47.6, 50.4 against 48.3) and took 0.880, 0.985 and 1.026 of the time of C on the three programs above.
 
 ## Algorithms
 

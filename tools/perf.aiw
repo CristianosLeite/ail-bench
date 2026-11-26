@@ -49,22 +49,24 @@ use "tools/lib/fmt.aiw"
 
 # ---- the programs: tool-local data
 
-# the name; 0 startup or 1 CPU-bound; what it reads; what it must write;
-# the status it must end with
+# the name; 0 startup, 1 CPU-bound, 2 a program of the harness or 3 a
+# program that spends its time in the runtime; what it reads; what it
+# must write; the status it must end with
 data progs 5 "hello" 4 "echo" 5 "count" 4 "fact" 4 "loop"
 data 7 "compute" 5 "sieve" 7 "collatz" 3 "fnv" 5 "isort"
 data 9 "quicksort" 9 "mergesort" 8 "heapsort" 7 "bsearch" 7 "hashtab" 5 "graph"
 data 6 "ndelem" 8 "ndreduce" 8 "ndmatmul" 7 "collseq" 7 "collmap"
-data pkind 0 0 0 0 0 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2
+data 6 "iocopy" 7 "iosmall" 6 "allocs"
+data pkind 0 0 0 0 0 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2 3 3 3
 # 0 nothing, 1 the bytes 0 to 255 sixteen times, 2 the number
 # 0x123456789abcdef0 as 8 bytes, 3 16000000 so, 4 500000 so, 5 the bytes 0
-# to 255 4096 times
-data pinput 0 1 1 0 0 2 3 4 5 2 0 0 0 0 0 0 0 0 0 0 0
+# to 255 4096 times, 6 the bytes 0 to 255 65536 times
+data pinput 0 1 1 0 0 2 3 4 5 2 0 0 0 0 0 0 0 0 0 0 0 6 0 2
 # 0 nothing, 1 the greeting, 2 its input, 3 the count, 4 the digits,
 # 9 whatever the C program writes
-data pwant 1 2 3 0 4 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9
-data pstat 0 0 0 120 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-const nprogs 21
+data pwant 1 2 3 0 4 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9 9
+data pstat 0 0 0 120 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+const nprogs 24
 # the algorithm programs, kind 2, from the first on: how many kernels
 # each has, and their names in that order; the first three are sorts
 const firstalgo 10
@@ -439,6 +441,9 @@ fn prepare pi
 	end
 	if k==5
 		n=1048576
+	end
+	if k==6
+		n=16777216
 	end
 	i=0
 	while i<n
@@ -840,7 +845,7 @@ end
 # or for an algorithm program the geometric mean over its kernel times
 fn figure pi
 	loadb pkind+pi as c
-	if c==1
+	if (c==1)|(c==3)
 		r=res+pi*128
 		load r+8 as m
 		load r+40 as d
@@ -1146,15 +1151,19 @@ fn anykind kind
 	ret 0
 end
 
-# the table of the programs of one kind, 0 or 1
+# the table of the programs of one kind, 0, 1 or 3
 fn table kind unit un scale
 	call anykind kind as c
 	ifz c
 		ret 0
 	end
-	if kind
+	if kind==1
 		call add ob "\nCPU-bound"
-	else
+	end
+	if kind==3
+		call add ob "\nRuntime"
+	end
+	ifz kind
 		call add ob "\nStartup"
 	end
 	call add ob ", median elapsed "
@@ -1193,7 +1202,11 @@ fn table kind unit un scale
 		k+=1
 	end
 	if nr
-		call mean g nr "CPU-bound program"
+		if kind==3
+			call mean g nr "runtime program"
+		else
+			call mean g nr "CPU-bound program"
+		end
 	end
 end
 
@@ -1395,6 +1408,7 @@ fn main
 	end
 	call table 0 "in microseconds" 1000
 	call table 1 "in milliseconds" 1000000
+	call table 3 "in milliseconds" 1000000
 	call atable 0
 	call atable 1
 end

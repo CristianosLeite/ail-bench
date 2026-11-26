@@ -1,0 +1,20 @@
+# copy the input to the output, 64 KiB a read: the cost of read and write
+buf b 65536
+label more
+rt read 0 b 65536 as n
+if n>65536
+	rt exit 1
+end
+ifz n
+	rt exit 0
+end
+p=b
+while n
+	rt write 1 p n as w
+	if w-1>=n
+		rt exit 1
+	end
+	p+=w
+	n-=w
+end
+jmp more

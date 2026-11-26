@@ -1,0 +1,41 @@
+# 200000 blocks of 16 to 1039 bytes of zeros, 64 of them alive at a time,
+# each written at both ends: the cost of alloc and free
+buf b 8
+buf live 512
+rt read 0 b 8 as n
+jne n 8 fail
+load b as x
+s=0
+i=0
+while i<200000
+	n=16+(x>>33&1023)
+	alloc n as p
+	jz p fail
+	load p as a
+	load p+n-8 as z
+	s+=a+z+n
+	store p x
+	store p+n-8 i
+	q=live+(i&63)*8
+	load q as o
+	if o
+		load o as a
+		s^=a
+		free o
+	end
+	store q p
+	x=x*6364136223846793005+1442695040888963407
+	i+=1
+end
+i=0
+while i<64
+	load live+i*8 as o
+	free o
+	i+=1
+end
+store b s
+rt write 1 b 8 as n
+jne n 8 fail
+rt exit 0
+label fail
+rt exit 1
