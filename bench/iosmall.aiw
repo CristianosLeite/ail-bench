@@ -1,0 +1,10 @@
+# a million writes of 16 bytes: the cost of a call of the runtime that is
+# one system call
+i=1000000
+while i
+	rt write 1 "0123456789abcde\n" as w
+	if w!=16
+		rt exit 1
+	end
+	i-=1
+end
